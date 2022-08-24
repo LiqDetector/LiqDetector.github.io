@@ -25,6 +25,12 @@
 
   <!-- 代码高亮 -->
   
+    
+      
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.1.1/styles/github.css">
+
+    
+  
 <meta name="generator" content="Hexo 6.2.0"></head>
 
 
@@ -122,23 +128,57 @@ color="200,200,200" opacity='0.8' zIndex="-2" count="200" src="//cdn.bootcss.com
         <!-- top型目录 -->
         
         <p><em>Catkin是ROS官方指定系统，用于创建功能和编译功能包，Catkin扩展了CMake，将 cmake 与 make 指令做了一个封装从而完成整个编译过程的工具。可移植性、对交叉编译更加友好。</em></p>
-<h2 id="创建工作空间并初始化"><a href="#创建工作空间并初始化" class="headerlink" title="创建工作空间并初始化"></a>创建工作空间并初始化</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mkdir -p 自定义空间名称/src</span><br><span class="line">cd 自定义空间名称</span><br><span class="line">catkin_make</span><br></pre></td></tr></table></figure>
+<h2 id="创建工作空间并初始化"><a href="#创建工作空间并初始化" class="headerlink" title="创建工作空间并初始化"></a>创建工作空间并初始化</h2><pre><code>mkdir -p 自定义空间名称/src
+cd 自定义空间名称
+catkin_make
+</code></pre>
 <p><em>创建了build和devel目录:<br>build:编译空间，用于存放CMake和catkin的缓存信息、配置信息和其他中间文件。<br> devel:开发空间，用于存放编译后生成的目标文件，包括头文件、动态&amp;静态链接库、可执行文件等。</em></p>
-<h2 id="进入src创建ROS包并添加依赖"><a href="#进入src创建ROS包并添加依赖" class="headerlink" title="进入src创建ROS包并添加依赖"></a>进入src创建ROS包并添加依赖</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd src</span><br><span class="line">catkin_create_pkg 自定义功能包名 roscpp rospy std_msgs</span><br></pre></td></tr></table></figure>
+<h2 id="进入src创建ROS包并添加依赖"><a href="#进入src创建ROS包并添加依赖" class="headerlink" title="进入src创建ROS包并添加依赖"></a>进入src创建ROS包并添加依赖</h2><pre><code>cd src
+catkin_create_pkg 自定义功能包名 roscpp rospy std_msgs
+</code></pre>
 <p><em>在工作空间下创建一个功能包（ROS基本单元，包含多个节点）</em></p>
-<h2 id="进入ROS包的src目录编辑源文件"><a href="#进入ROS包的src目录编辑源文件" class="headerlink" title="进入ROS包的src目录编辑源文件"></a>进入ROS包的src目录编辑源文件</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cd 自定义功能包/src</span><br><span class="line">touch main.cpp</span><br><span class="line">sudo gedit main.cpp</span><br></pre></td></tr></table></figure>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">#include &quot;ros/ros.h&quot;</span><br><span class="line"></span><br><span class="line">int main(int argc, char *argv[])</span><br><span class="line">&#123;</span><br><span class="line">    //执行 ros 节点初始化</span><br><span class="line">    ros::init(argc,argv,&quot;hello&quot;);</span><br><span class="line">    //创建 ros 节点句柄(非必须)</span><br><span class="line">    ros::NodeHandle n;</span><br><span class="line">    //控制台输出 hello world</span><br><span class="line">    ROS_INFO(&quot;hello world!&quot;);</span><br><span class="line"></span><br><span class="line">    return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="进入ROS包的src目录编辑源文件"><a href="#进入ROS包的src目录编辑源文件" class="headerlink" title="进入ROS包的src目录编辑源文件"></a>进入ROS包的src目录编辑源文件</h2><pre><code>cd 自定义功能包/src
+touch main.cpp
+sudo gedit main.cpp
+</code></pre>
+<pre><code>#include &quot;ros/ros.h&quot;
 
-<h2 id="编辑ROS包目录下的CMakelist-txt文件"><a href="#编辑ROS包目录下的CMakelist-txt文件" class="headerlink" title="编辑ROS包目录下的CMakelist.txt文件"></a>编辑ROS包目录下的CMakelist.txt文件</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo gedit ~/demo_ws/src/demo1/CMakeLists.txt</span><br></pre></td></tr></table></figure>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">add_executable(任意节点名称</span><br><span class="line">  src/源代码文件名.cpp</span><br><span class="line">)</span><br><span class="line">target_link_libraries(任意节点名称</span><br><span class="line">  $&#123;catkin_LIBRARIES&#125;</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+int main(int argc, char *argv[])
+&#123;
+    //执行 ros 节点初始化
+    ros::init(argc,argv,&quot;hello&quot;);
+    //创建 ros 节点句柄(非必须)
+    ros::NodeHandle n;
+    //控制台输出 hello world
+    ROS_INFO(&quot;hello world!&quot;);
 
-<h2 id="进入工作空间目录、编译"><a href="#进入工作空间目录、编译" class="headerlink" title="进入工作空间目录、编译"></a>进入工作空间目录、编译</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd 自定义空间名称</span><br><span class="line">catkin_make</span><br></pre></td></tr></table></figure>
-
+    return 0;
+&#125;
+</code></pre>
+<h2 id="编辑ROS包目录下的CMakelist-txt文件"><a href="#编辑ROS包目录下的CMakelist-txt文件" class="headerlink" title="编辑ROS包目录下的CMakelist.txt文件"></a>编辑ROS包目录下的CMakelist.txt文件</h2><pre><code>sudo gedit ~/demo_ws/src/demo1/CMakeLists.txt
+</code></pre>
+<pre><code>add_executable(任意节点名称
+  src/源代码文件名.cpp
+)
+target_link_libraries(任意节点名称
+  $&#123;catkin_LIBRARIES&#125;
+)
+</code></pre>
+<h2 id="进入工作空间目录、编译"><a href="#进入工作空间目录、编译" class="headerlink" title="进入工作空间目录、编译"></a>进入工作空间目录、编译</h2><pre><code>cd 自定义空间名称
+catkin_make
+</code></pre>
 <h2 id="执行"><a href="#执行" class="headerlink" title="执行"></a>执行</h2><ol>
-<li>启动终端1：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">roscore</span><br></pre></td></tr></table></figure></li>
+<li>启动终端1：</li>
+</ol>
+<pre><code>roscore
+</code></pre>
+<ol start="2">
 <li>启动终端2：</li>
 </ol>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cd 工作空间</span><br><span class="line">source ./devel/setup.bash</span><br><span class="line">rosrun 包名 节点名</span><br></pre></td></tr></table></figure>
+<pre><code>cd 工作空间
+source ./devel/setup.bash
+rosrun 包名 节点名
+</code></pre>
 
         <!-- 分类文章 -->
         
@@ -196,6 +236,13 @@ color="200,200,200" opacity='0.8' zIndex="-2" count="200" src="//cdn.bootcss.com
 <script src="/js/white.js"></script>
 
 
+
+    
+      
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/highlight.min.js"></script>
+
+      <script>hljs.initHighlightingOnLoad();</script>
+    
 
 </body>
 </html>

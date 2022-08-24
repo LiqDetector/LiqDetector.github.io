@@ -25,6 +25,12 @@
 
   <!-- 代码高亮 -->
   
+    
+      
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.1.1/styles/github.css">
+
+    
+  
 <meta name="generator" content="Hexo 6.2.0"></head>
 
 
@@ -123,28 +129,66 @@ color="200,200,200" opacity='0.8' zIndex="-2" count="200" src="//cdn.bootcss.com
         
         <h2 id="Ubuntu系统更改科大源"><a href="#Ubuntu系统更改科大源" class="headerlink" title="Ubuntu系统更改科大源"></a>Ubuntu系统更改科大源</h2><h3 id="1-1-软件配置"><a href="#1-1-软件配置" class="headerlink" title="1.1 软件配置"></a>1.1 软件配置</h3><p>打开“软件和更新”，确保勾选”restricted”， “universe，” 和 “multiverse”</p>
 <h3 id="1-2-更改科大源"><a href="#1-2-更改科大源" class="headerlink" title="1.2 更改科大源"></a>1.2 更改科大源</h3><p>在“下载自：”中选择科大源，关闭并更新(清华源在安装ROS时会报错)</p>
-<h2 id="设置key"><a href="#设置key" class="headerlink" title="设置key"></a>设置key</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-key adv --keyserver &#x27;hkp://keyserver.ubuntu.com:80&#x27;   </span><br><span class="line">--recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654  </span><br></pre></td></tr></table></figure>
-<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><h3 id="3-1-更新apt"><a href="#3-1-更新apt" class="headerlink" title="3.1 更新apt"></a>3.1 更新apt</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt update</span><br></pre></td></tr></table></figure>
-<h3 id="3-2-安装ROS"><a href="#3-2-安装ROS" class="headerlink" title="3.2 安装ROS"></a>3.2 安装ROS</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install ros-melodic-desktop-full</span><br></pre></td></tr></table></figure>
+<h2 id="设置key"><a href="#设置key" class="headerlink" title="设置key"></a>设置key</h2><pre><code>sudo apt-key adv --keyserver &#39;hkp://keyserver.ubuntu.com:80&#39;   
+--recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654  
+</code></pre>
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><h3 id="3-1-更新apt"><a href="#3-1-更新apt" class="headerlink" title="3.1 更新apt"></a>3.1 更新apt</h3><pre><code>sudo apt update
+</code></pre>
+<h3 id="3-2-安装ROS"><a href="#3-2-安装ROS" class="headerlink" title="3.2 安装ROS"></a>3.2 安装ROS</h3><pre><code>sudo apt install ros-melodic-desktop-full
+</code></pre>
 <p><em>Ubuntu18对应的ROS版本为melodic，注意区分版本！</em> </p>
 <h2 id="配置环境变量"><a href="#配置环境变量" class="headerlink" title="配置环境变量"></a>配置环境变量</h2><p>配置环境变量，以在任意终端中使用ROS</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo &quot;source /opt/ros/melodic/setup.bash&quot; &gt;&gt; ~/.bashrc source ~/.bashrc  </span><br></pre></td></tr></table></figure>
+<pre><code>echo &quot;source /opt/ros/melodic/setup.bash&quot; &gt;&gt; ~/.bashrc source ~/.bashrc  
+</code></pre>
 <h2 id="安装构建依赖"><a href="#安装构建依赖" class="headerlink" title="安装构建依赖"></a>安装构建依赖</h2><h3 id="5-1-安装构建依赖的相关工具"><a href="#5-1-安装构建依赖的相关工具" class="headerlink" title="5.1 安装构建依赖的相关工具"></a>5.1 安装构建依赖的相关工具</h3><p>安装工具:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install python-rosdep python-rosinstall python-rosinstall-generator python-wstool build-essential  </span><br></pre></td></tr></table></figure>
+<pre><code>sudo apt install python-rosdep python-rosinstall python-rosinstall-generator python-wstool build-essential  
+</code></pre>
 <p>安装rosdep</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install python-rosdep</span><br></pre></td></tr></table></figure>
+<pre><code>sudo apt install python-rosdep
+</code></pre>
 <h3 id="5-2-解决境外资源屏蔽问题"><a href="#5-2-解决境外资源屏蔽问题" class="headerlink" title="5.2 解决境外资源屏蔽问题"></a>5.2 解决境外资源屏蔽问题</h3><ul>
-<li>列表项列表项修改<code>/etc/hosts</code>文件：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo gedit /etc/hosts</span><br></pre></td></tr></table></figure>
-添加域名与IP映射内容：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">199.232.28.133  raw.githubusercontent.com</span><br></pre></td></tr></table></figure></li>
-<li>使用资源代理加速rosdep对GithubRaw的访问：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo gedit /usr/lib/python2.7/dist-packages/rosdep2/sources_list.py</span><br></pre></td></tr></table></figure>
-添加:<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">url=&quot;https://ghproxy.com/&quot;+url</span><br></pre></td></tr></table></figure></li>
-<li>修改: <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo gedit /usr/lib/python2.7/dist-packages/rosdistro/__init__.py  </span><br></pre></td></tr></table></figure>
-将DEFAULT_INDEX_URL修改为：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/usr/lib/python2.7/dist-packages/rosdistro/__init__.py  </span><br></pre></td></tr></table></figure></li>
-<li>添加：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo gedit /usr/lib/python2.7/dist-packages/rosdep2/gbpdistro_support.py</span><br></pre></td></tr></table></figure>
-在第205行添加<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gbpdistro_url = &quot;https://ghproxy.com/&quot; + gbpdistro_url  </span><br></pre></td></tr></table></figure></li>
-<li>同样修改以下文件：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">/usr/lib/python2.7/dist-packages/rosdep2/gbpdistro_support.py</span><br><span class="line">/usr/lib/python2.7/dist-packages/rosdep2/sources_list.py</span><br><span class="line">/usr/lib/python2.7/dist-packages/rosdep2/rep3.py</span><br><span class="line">/usr/lib/python2.7/dist-packages/rosdistro/manifest_provider/github.py</span><br></pre></td></tr></table></figure></li>
+<li>列表项列表项修改<code>/etc/hosts</code>文件：</li>
 </ul>
-<h3 id="5-3-初始化rosdep"><a href="#5-3-初始化rosdep" class="headerlink" title="5.3 初始化rosdep"></a>5.3 初始化rosdep</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo rosdep init  </span><br><span class="line">rosdep update  </span><br></pre></td></tr></table></figure>
+<pre><code>sudo gedit /etc/hosts
+</code></pre>
+<p>添加域名与IP映射内容：</p>
+<pre><code>199.232.28.133  raw.githubusercontent.com
+</code></pre>
+<ul>
+<li>使用资源代理加速rosdep对GithubRaw的访问：</li>
+</ul>
+<pre><code>sudo gedit /usr/lib/python2.7/dist-packages/rosdep2/sources_list.py
+</code></pre>
+<p>添加:</p>
+<pre><code>url=&quot;https://ghproxy.com/&quot;+url
+</code></pre>
+<ul>
+<li>修改:</li>
+</ul>
+<pre><code>sudo gedit /usr/lib/python2.7/dist-packages/rosdistro/__init__.py  
+</code></pre>
+<p>将DEFAULT_INDEX_URL修改为：</p>
+<pre><code>/usr/lib/python2.7/dist-packages/rosdistro/__init__.py  
+</code></pre>
+<ul>
+<li>添加：</li>
+</ul>
+<pre><code>sudo gedit /usr/lib/python2.7/dist-packages/rosdep2/gbpdistro_support.py
+</code></pre>
+<p>在第205行添加</p>
+<pre><code>gbpdistro_url = &quot;https://ghproxy.com/&quot; + gbpdistro_url  
+</code></pre>
+<ul>
+<li>同样修改以下文件：</li>
+</ul>
+<pre><code>/usr/lib/python2.7/dist-packages/rosdep2/gbpdistro_support.py
+/usr/lib/python2.7/dist-packages/rosdep2/sources_list.py
+/usr/lib/python2.7/dist-packages/rosdep2/rep3.py
+/usr/lib/python2.7/dist-packages/rosdistro/manifest_provider/github.py
+</code></pre>
+<h3 id="5-3-初始化rosdep"><a href="#5-3-初始化rosdep" class="headerlink" title="5.3 初始化rosdep"></a>5.3 初始化rosdep</h3><pre><code>sudo rosdep init  
+rosdep update  
+</code></pre>
 <h2 id="测试ROS"><a href="#测试ROS" class="headerlink" title="测试ROS"></a>测试ROS</h2><ol>
 <li>启动新终端，执行：<code>roscore</code></li>
 <li>启动新终端，执行:<code>rosrun turtlesim turtlesim_node</code><br><em>弹出图形界面</em></li>
@@ -207,6 +251,13 @@ color="200,200,200" opacity='0.8' zIndex="-2" count="200" src="//cdn.bootcss.com
 <script src="/js/white.js"></script>
 
 
+
+    
+      
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/highlight.min.js"></script>
+
+      <script>hljs.initHighlightingOnLoad();</script>
+    
 
 </body>
 </html>

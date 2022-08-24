@@ -1,0 +1,363 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>  手写数字图像分类 |    Fan&#39;s Notebook.</title>
+  <meta name="description" content="Fan">
+  <!-- 标签页图标 -->
+  
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  
+
+  <!-- 图标库 -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@2.2.0/fonts/remixicon.css" rel="stylesheet">
+  <!-- 动画库 -->
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fushaolei/cdn-white@1.0/css/animate.css"/>
+  
+  <!-- css文件 -->
+  
+<link rel="stylesheet" href="/css/white.css">
+
+  <!-- 代码高亮 -->
+  
+    
+      
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.1.1/styles/github.css">
+
+    
+  
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+
+<body>
+
+<!--动态线条背景-->
+<script type="text/javascript"
+color="200,200,200" opacity='0.8' zIndex="-2" count="200" src="//cdn.bootcss.com/canvas-nest.js/1.0.0/canvas-nest.min.js">
+</script>
+
+
+<div class="menu-outer">
+    <div class="menu-inner">
+      <div class="menu-site-name  animate__animated  animate__fadeInUp">
+        <a href="/">
+          Fan&#39;s Notebook.
+        </a>
+        
+      </div>
+      <div class="menu-group">
+        <ul class="menu-ul">
+        
+          <a href="/" class="nav-link">
+            <li class="menu-li  animate__animated  animate__fadeInUp">
+              HOME
+            </li>
+          </a>
+        
+          <a href="/archives" class="nav-link">
+            <li class="menu-li  animate__animated  animate__fadeInUp">
+              BLOG
+            </li>
+          </a>
+        
+        
+        
+          <li class="menu-li animate__animated  animate__fadeInUp" id="mobile-menu">
+            <i class="ri-menu-line"></i>
+          </li>
+        
+        </ul>
+
+      </div>
+
+    </div>
+</div>
+<div id="mobile-main" class="animate__animated  animate__fadeIn">
+  <div class="mobile-menu-inner">
+    <div class="mobile-menu-site-name animate__animated  animate__fadeInUp">
+      <a href="/">
+        Fan&#39;s Notebook.
+      </a>
+    </div>
+    <div class="mobile-menu-group" id="mobile-close">
+      <i class="ri-close-line"></i>
+    </div>
+
+  </div>
+
+  <div class="mobile-menu-div">
+  
+    <a href="/" class="mobile-nav-link">
+      <div class="mobile-menu-child animate__animated  animate__fadeInUp">
+        <span>HOME</span>
+      </div>
+    </a>
+  
+    <a href="/archives" class="mobile-nav-link">
+      <div class="mobile-menu-child animate__animated  animate__fadeInUp">
+        <span>BLOG</span>
+      </div>
+    </a>
+  
+  
+  </div>
+
+
+</div>
+
+<div class="body-outer">
+  <div class="body-inner">
+    
+<article class="post-inner">
+  <div class="post-content-outer">
+    <div class="post-intro">
+      <div class="post-title animate__animated  animate__fadeInUp">手写数字图像分类</div>
+      <div class="meta-intro animate__animated  animate__fadeInUp">Aug 17 2022</div>
+      
+    </div>
+    <div class="post-content-inner">
+      <div class="post-content-inner-space">
+
+      </div>
+      <div class="post-content-main animate__animated  animate__fadeInUp">
+        <!-- top型目录 -->
+        
+        <h2 id="加载数据集"><a href="#加载数据集" class="headerlink" title="加载数据集"></a>加载数据集</h2><pre><code class="python">import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torchvision import datasets,transforms
+from torch.autograd import Variable
+import matplotlib.pyplot as plt
+%matplotlib inline
+</code></pre>
+<pre><code class="python"># 检查是否可用cuda加速
+is_cuda=False
+if torch.cuda.is_available():
+    is_cuda = True
+</code></pre>
+<pre><code class="python"># 将几个变换组合到一起 
+# 将0～255转变为0～1
+# 通过平均值和标准差标准化一个tensor图像
+transformation = transforms.Compose([transforms.ToTensor(),transforms.Normalize((0.1307,), (0.3081,))])
+
+# 加载训练集和测试集
+train_dataset = datasets.MNIST(&#39;data/&#39;,train=True,transform=transformation,download=True)
+test_dataset = datasets.MNIST(&#39;data/&#39;,train=False,transform=transformation,download=True)
+
+# 把数据封装成DataLoader
+# dataset原始数据、batch_size批处理数量、shuffle将输入顺序打乱
+train_loader = torch.utils.data.DataLoader(train_dataset,batch_size=32,shuffle=True)
+test_loader = torch.utils.data.DataLoader(test_dataset,batch_size=32,shuffle=True)
+</code></pre>
+<pre><code class="python"># 抽取其中的一批数据
+sample_data = next(iter(train_loader))
+</code></pre>
+<h2 id="可视化"><a href="#可视化" class="headerlink" title="可视化"></a>可视化</h2><pre><code class="python"># 可视化
+def plot_img(image):
+    image = image.numpy()[0]
+    mean = 0.1307
+    std = 0.3081
+    image = ((mean * image) + std)
+    plt.imshow(image,cmap=&#39;gray&#39;)
+</code></pre>
+<pre><code class="python">plot_img(sample_data[0][2])
+</code></pre>
+<pre><code class="python">plot_img(sample_data[0][1])
+</code></pre>
+<h2 id="构建CNN模型"><a href="#构建CNN模型" class="headerlink" title="构建CNN模型"></a>构建CNN模型</h2><pre><code class="python">class Net(nn.Module):
+    def __init__(self):
+        super().__init__()
+        # conv2d负责应用卷积滤波器
+        self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
+        self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
+        # 正则化技术防止过拟合
+        self.conv2_drop = nn.Dropout2d()
+        self.fc1 = nn.Linear(320, 50)
+        self.fc2 = nn.Linear(50, 10)
+
+    def forward(self, x):
+        # 池化层减小卷积层输出数据大小、不关注图像位置微小变化
+        # 最大池化之后一般使用非线性激活
+        x = F.relu(F.max_pool2d(self.conv1(x), 2))
+        x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
+        # 为了应用线性层需要将矩阵扁平化
+        x = x.view(-1, 320)
+        x = F.relu(self.fc1(x))
+        #x = F.dropout(x,p=0.1, training=self.training)
+        x = self.fc2(x)
+        return F.log_softmax(x,dim=1)
+</code></pre>
+<h2 id="训练模型"><a href="#训练模型" class="headerlink" title="训练模型"></a>训练模型</h2><pre><code class="python">model = Net()
+if is_cuda:
+    model.cuda()
+</code></pre>
+<pre><code class="python"># 随机梯度下降优化器
+optimizer = optim.SGD(model.parameters(),lr=0.01)
+</code></pre>
+<pre><code class="python"># 加载数据和标签
+data , target = next(iter(train_loader))
+</code></pre>
+<pre><code class="python">output = model(Variable(data.cuda()))
+</code></pre>
+<pre><code class="python">def fit(epoch,model,data_loader,phase=&#39;training&#39;,volatile=False):
+    if phase == &#39;training&#39;:
+        model.train()
+    if phase == &#39;validation&#39;:
+        model.eval()
+        volatile=True
+    running_loss = 0.0
+    running_correct = 0
+    for batch_idx , (data,target) in enumerate(data_loader):
+        if is_cuda:
+            data,target = data.cuda(),target.cuda()
+        data , target = Variable(data,volatile),Variable(target)
+        if phase == &#39;training&#39;:
+            optimizer.zero_grad()
+        output = model(data)
+        loss = F.nll_loss(output,target)
+        
+        running_loss += F.nll_loss(output,target,size_average=False).item()
+        preds = output.data.max(dim=1,keepdim=True)[1]
+        running_correct += preds.eq(target.data.view_as(preds)).cpu().sum()
+        if phase == &#39;training&#39;:
+            loss.backward()
+            optimizer.step()
+    
+    loss = running_loss/len(data_loader.dataset)
+    accuracy = 100. * running_correct/len(data_loader.dataset)
+    
+    print(f&#39;&#123;phase&#125; loss is &#123;loss:&#123;5&#125;.&#123;2&#125;&#125; and &#123;phase&#125; accuracy is &#123;running_correct&#125;/&#123;len(data_loader.dataset)&#125;&#123;accuracy:&#123;10&#125;.&#123;4&#125;&#125;&#39;)
+    return loss,accuracy
+</code></pre>
+<pre><code class="python">train_losses , train_accuracy = [],[]
+val_losses , val_accuracy = [],[]
+for epoch in range(1,20):
+    epoch_loss, epoch_accuracy = fit(epoch,model,train_loader,phase=&#39;training&#39;)
+    val_epoch_loss , val_epoch_accuracy = fit(epoch,model,test_loader,phase=&#39;validation&#39;)
+    train_losses.append(epoch_loss)
+    train_accuracy.append(epoch_accuracy)
+    val_losses.append(val_epoch_loss)
+    val_accuracy.append(val_epoch_accuracy)
+</code></pre>
+<pre><code>training loss is 0.072 and training accuracy is 58680/60000      97.8
+validation loss is 0.035 and validation accuracy is 9875/10000     98.75
+training loss is 0.067 and training accuracy is 58813/60000     98.02
+validation loss is 0.034 and validation accuracy is 9883/10000     98.83
+training loss is 0.066 and training accuracy is 58819/60000     98.03
+validation loss is 0.035 and validation accuracy is 9884/10000     98.84
+training loss is 0.064 and training accuracy is 58853/60000     98.09
+validation loss is  0.03 and validation accuracy is 9900/10000      99.0
+training loss is 0.061 and training accuracy is 58904/60000     98.17
+validation loss is 0.031 and validation accuracy is 9893/10000     98.93
+training loss is 0.058 and training accuracy is 58918/60000      98.2
+validation loss is  0.03 and validation accuracy is 9907/10000     99.07
+training loss is 0.058 and training accuracy is 58964/60000     98.27
+validation loss is 0.029 and validation accuracy is 9908/10000     99.08
+training loss is 0.055 and training accuracy is 58990/60000     98.32
+validation loss is 0.028 and validation accuracy is 9909/10000     99.09
+training loss is 0.053 and training accuracy is 59004/60000     98.34
+validation loss is 0.035 and validation accuracy is 9883/10000     98.83
+training loss is 0.052 and training accuracy is 59036/60000     98.39
+validation loss is 0.028 and validation accuracy is 9903/10000     99.03
+training loss is  0.05 and training accuracy is 59057/60000     98.43
+validation loss is 0.029 and validation accuracy is 9905/10000     99.05
+training loss is 0.049 and training accuracy is 59110/60000     98.52
+validation loss is 0.027 and validation accuracy is 9913/10000     99.13
+training loss is 0.049 and training accuracy is 59120/60000     98.53
+validation loss is 0.026 and validation accuracy is 9910/10000      99.1
+training loss is 0.047 and training accuracy is 59122/60000     98.54
+validation loss is 0.026 and validation accuracy is 9923/10000     99.23
+training loss is 0.046 and training accuracy is 59115/60000     98.53
+validation loss is 0.028 and validation accuracy is 9909/10000     99.09
+training loss is 0.046 and training accuracy is 59149/60000     98.58
+validation loss is 0.026 and validation accuracy is 9918/10000     99.18
+training loss is 0.044 and training accuracy is 59197/60000     98.66
+validation loss is 0.026 and validation accuracy is 9923/10000     99.23
+training loss is 0.044 and training accuracy is 59188/60000     98.65
+validation loss is 0.026 and validation accuracy is 9916/10000     99.16
+training loss is 0.043 and training accuracy is 59200/60000     98.67
+validation loss is 0.022 and validation accuracy is 9920/10000      99.2
+</code></pre>
+<pre><code class="python"># 可视化训练和验证数据集的损失值
+plt.plot(range(1,len(train_losses)+1),train_losses,&#39;bo&#39;,label = &#39;training loss&#39;)
+plt.plot(range(1,len(val_losses)+1),val_losses,&#39;r&#39;,label = &#39;validation loss&#39;)
+plt.legend()
+</code></pre>
+<pre><code class="python"># 可视化训练和验证数据集的准确率
+plt.plot(range(1,len(train_accuracy)+1),train_accuracy,&#39;bo&#39;,label = &#39;train accuracy&#39;)
+plt.plot(range(1,len(val_accuracy)+1),val_accuracy,&#39;r&#39;,label = &#39;val accuracy&#39;)
+plt.legend()
+</code></pre>
+
+        <!-- 分类文章 -->
+        
+      </div>
+      <div class="post-content-inner-space">
+        
+          <div class="space-toc-main animate__animated  animate__fadeInUp">
+            <ol class="space-toc"><li class="space-toc-item space-toc-level-2"><a class="space-toc-link" href="#%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE%E9%9B%86"><span class="space-toc-text">加载数据集</span></a></li><li class="space-toc-item space-toc-level-2"><a class="space-toc-link" href="#%E5%8F%AF%E8%A7%86%E5%8C%96"><span class="space-toc-text">可视化</span></a></li><li class="space-toc-item space-toc-level-2"><a class="space-toc-link" href="#%E6%9E%84%E5%BB%BACNN%E6%A8%A1%E5%9E%8B"><span class="space-toc-text">构建CNN模型</span></a></li><li class="space-toc-item space-toc-level-2"><a class="space-toc-link" href="#%E8%AE%AD%E7%BB%83%E6%A8%A1%E5%9E%8B"><span class="space-toc-text">训练模型</span></a></li></ol>
+           </div>
+        
+      </div>
+   </div>
+    <!-- 评论 -->
+    
+  </div>
+</article>
+  </div>
+</div>
+
+
+
+<!-- 如果是home模式的话，不在首页就显示footer，如果不是home模式的话 所有都显示footer -->
+
+  <div class="footer-outer animate__animated  animate__fadeInUp">
+    <div class="footer-inner">
+    <div class="footer-text">
+    <p>Power by Guo_Yifan</p>
+
+    </div>
+    <div class="footer-contact">
+    <ul class="footer-ul">
+        
+        <li class="footer-li">
+            <a href="https://github.com" target="_blank">
+                <i class="ri-github-line"></i>
+            </a>
+        </li>
+        
+        <li class="footer-li">
+            <a href="mailto:guoyf@mail.nwpu.edu.cn" target="_blank">
+                <i class="ri-mail-line"></i>
+            </a>
+        </li>
+        
+    </ul>
+    </div>
+    </div>
+</div>
+
+
+
+
+
+
+<script src="/js/white.js"></script>
+
+
+
+    
+      
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/highlight.min.js"></script>
+
+      <script>hljs.initHighlightingOnLoad();</script>
+    
+
+</body>
+</html>
