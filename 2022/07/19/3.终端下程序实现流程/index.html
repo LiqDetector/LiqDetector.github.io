@@ -66,6 +66,13 @@ color="200,200,200" opacity='0.8' zIndex="-2" count="200" src="//cdn.bootcss.com
           </a>
         
         
+          <li class="menu-li animate__animated  animate__fadeInUp" id="sort">
+             CLASS
+             <div class="categories-outer " id="sort-div">
+               <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/DL/">DL</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/ROS/">ROS</a></li></ul>
+             </div>
+          </li>
+        
         
           <li class="menu-li animate__animated  animate__fadeInUp" id="mobile-menu">
             <i class="ri-menu-line"></i>
@@ -127,20 +134,16 @@ color="200,200,200" opacity='0.8' zIndex="-2" count="200" src="//cdn.bootcss.com
       <div class="post-content-main animate__animated  animate__fadeInUp">
         <!-- top型目录 -->
         
-        <p><em>Catkin是ROS官方指定系统，用于创建功能和编译功能包，Catkin扩展了CMake，将 cmake 与 make 指令做了一个封装从而完成整个编译过程的工具。可移植性、对交叉编译更加友好。</em></p>
-<h2 id="创建工作空间并初始化"><a href="#创建工作空间并初始化" class="headerlink" title="创建工作空间并初始化"></a>创建工作空间并初始化</h2><pre><code>mkdir -p 自定义空间名称/src
+        <h2 id="创建工作空间并初始化"><a href="#创建工作空间并初始化" class="headerlink" title="创建工作空间并初始化"></a>创建工作空间并初始化</h2><pre><code>mkdir -p 自定义空间名称/src
 cd 自定义空间名称
 catkin_make
 </code></pre>
-<p><em>创建了build和devel目录:<br>build:编译空间，用于存放CMake和catkin的缓存信息、配置信息和其他中间文件。<br> devel:开发空间，用于存放编译后生成的目标文件，包括头文件、动态&amp;静态链接库、可执行文件等。</em></p>
+<p>*Catkin是ROS官方指定系统，用于创建功能和编译功能包，Catkin扩展了CMake，将 cmake 与 make 指令做了一个封装从而完成整个编译过程的工具。可移植性、对交叉编译更加友好。<br>创建了build和devel目录:<br>build:编译空间，用于存放CMake和catkin的缓存信息、配置信息和其他中间文件。<br> devel:开发空间，用于存放编译后生成的目标文件，包括头文件、动态&amp;静态链接库、可执行文件等。<br>*</p>
 <h2 id="进入src创建ROS包并添加依赖"><a href="#进入src创建ROS包并添加依赖" class="headerlink" title="进入src创建ROS包并添加依赖"></a>进入src创建ROS包并添加依赖</h2><pre><code>cd src
 catkin_create_pkg 自定义功能包名 roscpp rospy std_msgs
 </code></pre>
 <p><em>在工作空间下创建一个功能包（ROS基本单元，包含多个节点）</em></p>
-<h2 id="进入ROS包的src目录编辑源文件"><a href="#进入ROS包的src目录编辑源文件" class="headerlink" title="进入ROS包的src目录编辑源文件"></a>进入ROS包的src目录编辑源文件</h2><pre><code>cd 自定义功能包/src
-touch main.cpp
-sudo gedit main.cpp
-</code></pre>
+<h2 id="进入ROS包的src目录编辑源文件"><a href="#进入ROS包的src目录编辑源文件" class="headerlink" title="进入ROS包的src目录编辑源文件"></a>进入ROS包的src目录编辑源文件</h2><p><code>cd 自定义功能包/src</code><br><code>touch main.cpp</code><br><code>sudo gedit main.cpp</code></p>
 <pre><code>#include &quot;ros/ros.h&quot;
 
 int main(int argc, char *argv[])
@@ -155,8 +158,7 @@ int main(int argc, char *argv[])
     return 0;
 &#125;
 </code></pre>
-<h2 id="编辑ROS包目录下的CMakelist-txt文件"><a href="#编辑ROS包目录下的CMakelist-txt文件" class="headerlink" title="编辑ROS包目录下的CMakelist.txt文件"></a>编辑ROS包目录下的CMakelist.txt文件</h2><pre><code>sudo gedit ~/demo_ws/src/demo1/CMakeLists.txt
-</code></pre>
+<h2 id="编辑ROS包目录下的CMakelist-txt文件"><a href="#编辑ROS包目录下的CMakelist-txt文件" class="headerlink" title="编辑ROS包目录下的CMakelist.txt文件"></a>编辑ROS包目录下的CMakelist.txt文件</h2><p><code>sudo gedit ~/demo_ws/src/demo1/CMakeLists.txt</code></p>
 <pre><code>add_executable(任意节点名称
   src/源代码文件名.cpp
 )
@@ -168,11 +170,7 @@ target_link_libraries(任意节点名称
 catkin_make
 </code></pre>
 <h2 id="执行"><a href="#执行" class="headerlink" title="执行"></a>执行</h2><ol>
-<li>启动终端1：</li>
-</ol>
-<pre><code>roscore
-</code></pre>
-<ol start="2">
+<li>启动终端1：<br><code>roscore</code></li>
 <li>启动终端2：</li>
 </ol>
 <pre><code>cd 工作空间
@@ -181,6 +179,101 @@ rosrun 包名 节点名
 </code></pre>
 
         <!-- 分类文章 -->
+        
+          <div class="post-categoris-bottom">
+            <div class="post-categoris-name">ROS</div>
+            <ul>
+            
+            
+              
+                <li class="base">
+                  <a  href="/2022/07/18/2.Ubuntu18%E7%8E%AF%E5%A2%83%E4%B8%8BROS%E7%9A%84%E5%AE%89%E8%A3%85/" class="post-categoris-bottom-link">
+                  Ubuntu18环境下ROS的安装
+                </a>
+                </li>
+              
+              
+            
+            
+            
+              
+                <li class="me base">
+                  <a  href="/2022/07/19/1.%E7%BB%88%E7%AB%AF%E4%B8%8B%E7%A8%8B%E5%BA%8F%E5%AE%9E%E7%8E%B0%E6%B5%81%E7%A8%8B/" class="post-categoris-bottom-link">
+                  终端下程序实现流程
+                </a>
+                </li>
+              
+              
+            
+            
+            
+              
+                <li class="me base">
+                  <a  href="/2022/07/19/3.%E7%BB%88%E7%AB%AF%E4%B8%8B%E7%A8%8B%E5%BA%8F%E5%AE%9E%E7%8E%B0%E6%B5%81%E7%A8%8B/" class="post-categoris-bottom-link">
+                  终端下程序实现流程
+                </a>
+                </li>
+              
+              
+            
+            
+            
+              
+                <li class="base">
+                  <a  href="/2022/07/20/4.ROS%E9%9B%86%E6%88%90%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA%EF%BC%88C++%EF%BC%89/" class="post-categoris-bottom-link">
+                  ROS集成开发环境搭建
+                </a>
+                </li>
+              
+              
+            
+            
+            
+              
+                <li class="base">
+                  <a  href="/2022/07/21/5.ROS%E8%AF%9D%E9%A2%98%E9%80%9A%E4%BF%A1%E5%9F%BA%E6%9C%AC%E6%93%8D%E4%BD%9C/" class="post-categoris-bottom-link">
+                  话题通信基本操作
+                </a>
+                </li>
+              
+              
+            
+            
+            
+              
+                <li class="base">
+                  <a  href="/2022/07/22/6.ROS%E8%AF%9D%E9%A2%98%E9%80%9A%E4%BF%A1turtlesim%E6%A1%88%E4%BE%8B/" class="post-categoris-bottom-link">
+                  话题通信Turtlesim案例
+                </a>
+                </li>
+              
+              
+            
+            
+            
+              
+            
+            
+            
+              
+            
+            
+            
+              
+            
+            
+            
+              
+            
+            
+            
+              
+            
+            
+            </ul>
+
+          </div>
+
         
       </div>
       <div class="post-content-inner-space">
