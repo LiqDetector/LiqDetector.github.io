@@ -1,0 +1,921 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>  基于ResNeXt50_32X4D的树叶分类 |    Fan&#39;s Notebook.</title>
+  <meta name="description" content="Fan">
+  <!-- 标签页图标 -->
+  
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  
+
+  <!-- 图标库 -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@2.2.0/fonts/remixicon.css" rel="stylesheet">
+  <!-- 动画库 -->
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fushaolei/cdn-white@1.0/css/animate.css"/>
+  
+  <!-- css文件 -->
+  
+<link rel="stylesheet" href="/css/white.css">
+
+  <!-- 代码高亮 -->
+  
+    
+      
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.1.1/styles/github.css">
+
+    
+  
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+
+<body>
+
+<!--动态线条背景-->
+<script type="text/javascript"
+color="200,200,200" opacity='0.8' zIndex="-2" count="200" src="//cdn.bootcss.com/canvas-nest.js/1.0.0/canvas-nest.min.js">
+</script>
+
+
+<div class="menu-outer">
+    <div class="menu-inner">
+      <div class="menu-site-name  animate__animated  animate__fadeInUp">
+        <a href="/">
+          Fan&#39;s Notebook.
+        </a>
+        
+      </div>
+      <div class="menu-group">
+        <ul class="menu-ul">
+        
+          <a href="/" class="nav-link">
+            <li class="menu-li  animate__animated  animate__fadeInUp">
+              HOME
+            </li>
+          </a>
+        
+          <a href="/archives" class="nav-link">
+            <li class="menu-li  animate__animated  animate__fadeInUp">
+              BLOG
+            </li>
+          </a>
+        
+        
+          <li class="menu-li animate__animated  animate__fadeInUp" id="sort">
+             CLASS
+             <div class="categories-outer " id="sort-div">
+               <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/DL/">DL</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/ROS/">ROS</a></li></ul>
+             </div>
+          </li>
+        
+        
+          <li class="menu-li animate__animated  animate__fadeInUp" id="mobile-menu">
+            <i class="ri-menu-line"></i>
+          </li>
+        
+        </ul>
+
+      </div>
+
+    </div>
+</div>
+<div id="mobile-main" class="animate__animated  animate__fadeIn">
+  <div class="mobile-menu-inner">
+    <div class="mobile-menu-site-name animate__animated  animate__fadeInUp">
+      <a href="/">
+        Fan&#39;s Notebook.
+      </a>
+    </div>
+    <div class="mobile-menu-group" id="mobile-close">
+      <i class="ri-close-line"></i>
+    </div>
+
+  </div>
+
+  <div class="mobile-menu-div">
+  
+    <a href="/" class="mobile-nav-link">
+      <div class="mobile-menu-child animate__animated  animate__fadeInUp">
+        <span>HOME</span>
+      </div>
+    </a>
+  
+    <a href="/archives" class="mobile-nav-link">
+      <div class="mobile-menu-child animate__animated  animate__fadeInUp">
+        <span>BLOG</span>
+      </div>
+    </a>
+  
+  
+  </div>
+
+
+</div>
+
+<div class="body-outer">
+  <div class="body-inner">
+    
+<article class="post-inner">
+  <div class="post-content-outer">
+    <div class="post-intro">
+      <div class="post-title animate__animated  animate__fadeInUp">基于ResNeXt50_32X4D的树叶分类</div>
+      <div class="meta-intro animate__animated  animate__fadeInUp">Sep 06 2022</div>
+      
+    </div>
+    <div class="post-content-inner">
+      <div class="post-content-inner-space">
+
+      </div>
+      <div class="post-content-main animate__animated  animate__fadeInUp">
+        <!-- top型目录 -->
+        
+        <h2 id="导入相关库"><a href="#导入相关库" class="headerlink" title="导入相关库"></a>导入相关库</h2><pre><code class="python">from torch.utils.data import Dataset
+import torchvision
+from tqdm import tqdm
+import torch.nn as nn
+from PIL import Image
+import torch
+import os
+import pandas as pd
+import numpy as np
+from torchvision import transforms
+from torch.utils.data import Dataset, DataLoader
+</code></pre>
+<h2 id="观察数据"><a href="#观察数据" class="headerlink" title="观察数据"></a>观察数据</h2><pre><code class="python"># 展示label文件
+labels_dataframe = pd.read_csv(&quot;/content/competitions/classify-leaves/train.csv&quot;)
+labels_dataframe.head(5)
+labels_dataframe.describe()
+</code></pre>
+<h2 id="对标签排序"><a href="#对标签排序" class="headerlink" title="对标签排序"></a>对标签排序</h2><pre><code class="python">leaves_labels = sorted(list(set(labels_dataframe[&#39;label&#39;])))
+n_classes = len(leaves_labels)
+</code></pre>
+<h2 id="数字和文字"><a href="#数字和文字" class="headerlink" title="数字和文字"></a>数字和文字</h2><pre><code class="python"># 把label转换成数字
+# 再把数字转换为原来的label
+class_to_num = dict(zip(leaves_labels, range(n_classes)))
+num_to_class = dict(zip(range(n_classes), leaves_labels))
+</code></pre>
+<h2 id="重写dataset类"><a href="#重写dataset类" class="headerlink" title="重写dataset类"></a>重写dataset类</h2><pre><code class="python">class LeavesData(Dataset):
+  def __init__(self, csv_path, file_path, mode=&#39;train&#39;, valid_ratio=0.2, resize_height=256, resize_width=256):
+    &#39;&#39;&#39;
+    csv_path: csv文件路径
+    file_path: 主文件路径
+    mode: 训练模式还是测试模式
+    valid_ratio: 划分训练集和验证集的比例
+    resize_height: 调整图片
+
+    1、调整图片尺寸
+    2、读取csv文件到pd
+    3、根据训练模式，加载图片路径、标签
+    &#39;&#39;&#39;
+  
+    # 调整图片尺寸
+    self.resize_height = resize_height
+    self.resize_width = resize_width
+    
+    # 读取csv文件
+    self.csv_path = csv_path
+    self.file_path = file_path
+    self.mode = mode
+    # 利用pandas读取csv文件
+    self.data_info = pd.read_csv(csv_path, header=None)
+
+    self.data_len = len(self.data_info.index) - 1
+    self.train_len = int(self.data_len * (1 - valid_ratio))
+
+    if mode == &#39;train&#39;:
+      self.train_image = np.asarray(self.data_info.iloc[1:self.train_len, 0])
+      self.train_label = np.asarray(self.data_info.iloc[1:self.train_len, 1])
+      self.image_arr = self.train_image
+      self.label_arr = self.train_label
+    elif mode == &#39;valid&#39;:
+      self.valid_image = np.asarray(self.data_info.iloc[self.train_len+1:, 0])
+      self.valid_label = np.asarray(self.data_info.iloc[self.train_len+1:, 1])
+      self.image_arr = self.valid_image
+      self.label_arr = self.valid_label
+    else:
+      self.test_image = np.asarray(self.data_info.iloc[1:, 0])
+      self.image_arr = self.test_image
+
+    self.real_len = len(self.image_arr)
+
+    print(&#39;Finished reading the &#123;&#125; set of Leaves Dataset (&#123;&#125; samples found)&#39;
+              .format(mode, self.real_len))
+  
+  def __getitem__(self, index):
+    &#39;&#39;&#39;
+    1、根据index读取图片
+    2、数据增强
+    3、返回每一个index对应的图片和标签
+    &#39;&#39;&#39;
+    
+    # 得到对应文件名
+    single_image_name = self.image_arr[index]
+    # 读取图像文件
+    img_as_img = Image.open(self.file_path + single_image_name)
+    # 只有训练集做数据增强
+    if self.mode == &#39;train&#39;:
+      transform = transforms.Compose([
+          transforms.Resize((224,224)),
+          transforms.RandomHorizontalFlip(p=0.5),
+          transforms.ToTensor()
+      ])
+    else:
+      transform = transforms.Compose([
+          transforms.Resize((224,224)),
+          transforms.ToTensor()
+      ])
+    img_as_img = transform(img_as_img)
+
+    if self.mode == &#39;test&#39;:
+      return img_as_img
+    else:
+      label = self.label_arr[index]
+      number_label = class_to_num[label]
+      # 返回每一个index对应的图片数据和对应的label
+      return img_as_img, number_label
+
+  def __len__(self):
+    return self.real_len
+</code></pre>
+<h2 id="加载数据"><a href="#加载数据" class="headerlink" title="加载数据"></a>加载数据</h2><pre><code class="python">
+train_path = &#39;/content/competitions/classify-leaves/train.csv&#39;
+test_path = &#39;/content/competitions/classify-leaves/test.csv&#39;
+img_path = &#39;/content/competitions/classify-leaves/&#39;
+
+train_dataset = LeavesData(train_path, img_path, mode=&#39;train&#39;)
+val_dataset = LeavesData(train_path, img_path, mode=&#39;valid&#39;)
+test_dataset = LeavesData(test_path, img_path, mode=&#39;test&#39;)
+</code></pre>
+<h2 id="加载DataLoader"><a href="#加载DataLoader" class="headerlink" title="加载DataLoader"></a>加载DataLoader</h2><pre><code class="python">train_loader = torch.utils.data.DataLoader(
+    dataset = train_dataset,
+    batch_size = 32,
+    shuffle = True,
+    num_workers = 2
+)
+
+test_loader = torch.utils.data.DataLoader(
+    dataset = test_dataset,
+    batch_size = 32,
+    shuffle = False,
+    num_workers = 2
+)
+val_loader = torch.utils.data.DataLoader(
+    dataset = val_dataset,
+    batch_size = 32,
+    shuffle = False,
+    num_workers = 2
+)
+</code></pre>
+<h2 id="加载与训练模型"><a href="#加载与训练模型" class="headerlink" title="加载与训练模型"></a>加载与训练模型</h2><pre><code class="python"># 加载预训练的模型
+net = torchvision.models.resnext50_32x4d(weights=torchvision.models.ResNeXt50_32X4D_Weights.IMAGENET1K_V2)
+net.fc = nn.Linear(net.fc.in_features, 176)
+</code></pre>
+<h2 id="训练"><a href="#训练" class="headerlink" title="训练"></a>训练</h2><pre><code class="python">from torch._C import device
+learning_rate = 3e-4
+weight_decay = 1e-3
+num_epoch = 50
+
+device = &#39;cuda&#39;
+net = net.to(device)
+net.device = device
+# 损失函数
+criterion = nn.CrossEntropyLoss()
+# 优化函数
+optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate, weight_decay=weight_decay)
+# 训练轮数
+n_epochs = num_epoch
+
+best_acc = 0.0
+for epoch in range(n_epochs):
+  # 训练
+  net.train()
+  train_loss = []
+  train_accs = []
+  for imgs, labels in tqdm(train_loader):
+    imgs = imgs.to(device)
+    labels = labels.to(device)
+    # 前向传播
+    logits = net(imgs)
+    # 计算损失值
+    loss = criterion(logits, labels)
+    # 清除上一步缓存的参数
+    optimizer.zero_grad()
+    # 反向传播计算梯度
+    loss.backward()
+    # 更新参数
+    optimizer.step()
+    # 求准确率
+    acc = (logits.argmax(dim=-1) == labels).float().mean()
+    # 记录
+    train_loss.append(loss.item())
+    train_accs.append(acc)
+  
+  train_loss = sum(train_loss) / len(train_loss)
+  train_acc = sum(train_accs) / len(train_accs)
+
+  print(f&quot;[ Train | &#123;epoch + 1:03d&#125;/&#123;n_epochs:03d&#125; ] loss = &#123;train_loss:.5f&#125;, acc = &#123;train_acc:.5f&#125;&quot;)
+
+  net.eval()
+  valid_loss = []
+  valid_accs = []
+  for imgs,labels in tqdm(val_loader):
+    imgs = imgs.to(device)
+    labels = labels.to(device)
+    # 停止梯度计算
+    with torch.no_grad():
+      logits = net(imgs)
+    loss = criterion(logits, labels)
+    # 验证集不需要优化器
+    acc = (logits.argmax(dim=-1) == labels).float().mean()
+
+    valid_loss.append(loss.item())
+    valid_accs.append(acc)
+  
+  valid_los = sum(valid_loss) / len(valid_loss)
+  valid_acc = sum(valid_accs) / len(valid_accs)
+
+  print(f&quot;[ Valid | &#123;epoch + 1:03d&#125;/&#123;n_epochs:03d&#125; ] loss = &#123;valid_los:.5f&#125;, acc = &#123;valid_acc:.5f&#125;&quot;)
+
+  if valid_acc &gt; best_acc:
+    best_acc = valid_acc
+    torch.save(net.state_dict(),&#39;./pre_model.pth&#39;)
+    print(&#39;Saving model with acc&#123;:.3f&#125;&#39;.format(best_acc))
+</code></pre>
+<pre><code>100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 001/050 ] loss = 1.61764, acc = 0.60958
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.92it/s]
+
+
+[ Valid | 001/050 ] loss = 0.66461, acc = 0.79914
+Saving model with acc0.799
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.66it/s]
+
+
+[ Train | 002/050 ] loss = 0.43192, acc = 0.86943
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.91it/s]
+
+
+[ Valid | 002/050 ] loss = 0.66626, acc = 0.81392
+Saving model with acc0.814
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 003/050 ] loss = 0.30159, acc = 0.90989
+
+
+100%|██████████| 115/115 [00:10&lt;00:00, 11.20it/s]
+
+
+[ Valid | 003/050 ] loss = 0.63127, acc = 0.81996
+Saving model with acc0.820
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.66it/s]
+
+
+[ Train | 004/050 ] loss = 0.27351, acc = 0.91830
+
+
+100%|██████████| 115/115 [00:10&lt;00:00, 11.26it/s]
+
+
+[ Valid | 004/050 ] loss = 0.48614, acc = 0.84680
+Saving model with acc0.847
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.66it/s]
+
+
+[ Train | 005/050 ] loss = 0.26561, acc = 0.91753
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.97it/s]
+
+
+[ Valid | 005/050 ] loss = 0.80332, acc = 0.77876
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 006/050 ] loss = 0.22849, acc = 0.93249
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.85it/s]
+
+
+[ Valid | 006/050 ] loss = 0.55618, acc = 0.84322
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.66it/s]
+
+
+[ Train | 007/050 ] loss = 0.22680, acc = 0.93276
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.83it/s]
+
+
+[ Valid | 007/050 ] loss = 0.34824, acc = 0.89158
+Saving model with acc0.892
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.66it/s]
+
+
+[ Train | 008/050 ] loss = 0.20767, acc = 0.94000
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.95it/s]
+
+
+[ Valid | 008/050 ] loss = 0.41034, acc = 0.88250
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 009/050 ] loss = 0.19769, acc = 0.94490
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.95it/s]
+
+
+[ Valid | 009/050 ] loss = 0.73187, acc = 0.80261
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.66it/s]
+
+
+[ Train | 010/050 ] loss = 0.20624, acc = 0.94110
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 12.01it/s]
+
+
+[ Valid | 010/050 ] loss = 0.34149, acc = 0.90163
+Saving model with acc0.902
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.66it/s]
+
+
+[ Train | 011/050 ] loss = 0.17796, acc = 0.95194
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.94it/s]
+
+
+[ Valid | 011/050 ] loss = 0.38422, acc = 0.89022
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.66it/s]
+
+
+[ Train | 012/050 ] loss = 0.18021, acc = 0.95234
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 12.04it/s]
+
+
+[ Valid | 012/050 ] loss = 0.34939, acc = 0.90017
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 013/050 ] loss = 0.17183, acc = 0.95510
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.86it/s]
+
+
+[ Valid | 013/050 ] loss = 1.22746, acc = 0.70616
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 014/050 ] loss = 0.17306, acc = 0.95816
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.89it/s]
+
+
+[ Valid | 014/050 ] loss = 0.26789, acc = 0.91984
+Saving model with acc0.920
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.66it/s]
+
+
+[ Train | 015/050 ] loss = 0.16629, acc = 0.95938
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.99it/s]
+
+
+[ Valid | 015/050 ] loss = 0.56067, acc = 0.87071
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.66it/s]
+
+
+[ Train | 016/050 ] loss = 0.17113, acc = 0.95785
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.98it/s]
+
+
+[ Valid | 016/050 ] loss = 5.85690, acc = 0.32237
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 017/050 ] loss = 0.16892, acc = 0.96013
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.86it/s]
+
+
+[ Valid | 017/050 ] loss = 0.52650, acc = 0.85957
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.66it/s]
+
+
+[ Train | 018/050 ] loss = 0.17664, acc = 0.96262
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.93it/s]
+
+
+[ Valid | 018/050 ] loss = 0.37504, acc = 0.88848
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 019/050 ] loss = 0.17106, acc = 0.96132
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 12.00it/s]
+
+
+[ Valid | 019/050 ] loss = 0.42635, acc = 0.89109
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 020/050 ] loss = 0.16522, acc = 0.96535
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.92it/s]
+
+
+[ Valid | 020/050 ] loss = 0.43446, acc = 0.88729
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 021/050 ] loss = 0.16102, acc = 0.96737
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.99it/s]
+
+
+[ Valid | 021/050 ] loss = 0.35313, acc = 0.90951
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 022/050 ] loss = 0.16616, acc = 0.96619
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.88it/s]
+
+
+[ Valid | 022/050 ] loss = 1.58230, acc = 0.68017
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 023/050 ] loss = 0.16944, acc = 0.96485
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.82it/s]
+
+
+[ Valid | 023/050 ] loss = 0.25741, acc = 0.93342
+Saving model with acc0.933
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 024/050 ] loss = 0.15243, acc = 0.96793
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.92it/s]
+
+
+[ Valid | 024/050 ] loss = 0.72962, acc = 0.81908
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.66it/s]
+
+
+[ Train | 025/050 ] loss = 0.17331, acc = 0.96335
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.92it/s]
+
+
+[ Valid | 025/050 ] loss = 0.82210, acc = 0.78550
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 026/050 ] loss = 0.16453, acc = 0.96558
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.82it/s]
+
+
+[ Valid | 026/050 ] loss = 0.27691, acc = 0.92609
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 027/050 ] loss = 0.13914, acc = 0.97075
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.93it/s]
+
+
+[ Valid | 027/050 ] loss = 0.50586, acc = 0.86300
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 028/050 ] loss = 0.16047, acc = 0.96478
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.83it/s]
+
+
+[ Valid | 028/050 ] loss = 0.50529, acc = 0.86756
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.64it/s]
+
+
+[ Train | 029/050 ] loss = 0.16025, acc = 0.96528
+
+
+100%|██████████| 115/115 [00:10&lt;00:00, 11.18it/s]
+
+
+[ Valid | 029/050 ] loss = 0.30482, acc = 0.90974
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 030/050 ] loss = 0.15364, acc = 0.96531
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.76it/s]
+
+
+[ Valid | 030/050 ] loss = 1.17329, acc = 0.71153
+
+
+100%|██████████| 459/459 [02:06&lt;00:00,  3.64it/s]
+
+
+[ Train | 031/050 ] loss = 0.14968, acc = 0.96786
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.82it/s]
+
+
+[ Valid | 031/050 ] loss = 0.41531, acc = 0.89680
+
+
+100%|██████████| 459/459 [02:05&lt;00:00,  3.65it/s]
+
+
+[ Train | 032/050 ] loss = 0.14700, acc = 0.96708
+
+
+100%|██████████| 115/115 [00:09&lt;00:00, 11.88it/s]
+
+
+[ Valid | 032/050 ] loss = 0.89291, acc = 0.77849
+
+            。。。。。。。。。。。。
+</code></pre>
+<pre><code class="python"># 预测
+net.eval()
+
+predictions = []
+for imgs in tqdm(test_loader):
+  with torch.no_grad():
+    logits = net(imgs.to(device))
+    
+    predictions.extend(logits.argmax(dim=-1).cpu().numpy().tolist())
+
+preds = []
+for i in predictions:
+    preds.append(num_to_class[i])
+</code></pre>
+
+        <!-- 分类文章 -->
+        
+          <div class="post-categoris-bottom">
+            <div class="post-categoris-name">DL</div>
+            <ul>
+            
+            
+              
+            
+            
+            
+              
+            
+            
+            
+              
+            
+            
+            
+              
+            
+            
+            
+              
+            
+            
+            
+              
+            
+            
+            
+              
+                <li class="base">
+                  <a  href="/2022/08/15/1.2.%E5%9F%BA%E4%BA%8EMac%E7%9A%84mps%E5%8A%A0%E9%80%9F%E5%9B%BE%E5%83%8F%E5%88%86%E7%B1%BB/" class="post-categoris-bottom-link">
+                  基于mps加速的猫狗图像分类
+                </a>
+                </li>
+              
+              
+            
+            
+            
+              
+                <li class="base">
+                  <a  href="/2022/08/16/1.1.%E5%9F%BA%E4%BA%8Ecuda%E7%9A%84%E7%8C%AB%E7%8B%97%E5%9B%BE%E5%83%8F%E5%88%86%E7%B1%BB/" class="post-categoris-bottom-link">
+                  基于cuda加速的猫狗图像分类
+                </a>
+                </li>
+              
+              
+            
+            
+            
+              
+                <li class="base">
+                  <a  href="/2022/08/17/2.%E6%89%8B%E5%86%99%E6%95%B0%E5%AD%97%E5%9B%BE%E7%89%87%E5%88%86%E7%B1%BB/" class="post-categoris-bottom-link">
+                  手写数字图像分类
+                </a>
+                </li>
+              
+              
+            
+            
+            
+              
+                <li class="base">
+                  <a  href="/2022/08/18/3.%E6%9E%84%E5%BB%BACNN%E5%AF%B9%E7%8C%AB%E7%8B%97%E5%88%86%E7%B1%BB/" class="post-categoris-bottom-link">
+                  CNN猫狗图像分类
+                </a>
+                </li>
+              
+              
+            
+            
+            
+              
+                <li class="base">
+                  <a  href="/2022/08/19/4.%E5%9F%BA%E4%BA%8E%E8%BF%81%E7%A7%BB%E5%AD%A6%E4%B9%A0%E7%9A%84%E7%8C%AB%E7%8B%97%E5%88%86%E7%B1%BB/" class="post-categoris-bottom-link">
+                  迁移学习猫狗图像分类
+                </a>
+                </li>
+              
+              
+            
+            
+            
+              
+                <li class="me base">
+                  <a  href="/2022/09/06/8_%E5%9F%BA%E4%BA%8EResNeXt50_32X4D%E7%9A%84%E6%A0%91%E5%8F%B6%E5%88%86%E7%B1%BB/" class="post-categoris-bottom-link">
+                  基于ResNeXt50_32X4D的树叶分类
+                </a>
+                </li>
+              
+              
+            
+            
+            </ul>
+
+          </div>
+
+        
+      </div>
+      <div class="post-content-inner-space">
+        
+          <div class="space-toc-main animate__animated  animate__fadeInUp">
+            <ol class="space-toc"><li class="space-toc-item space-toc-level-2"><a class="space-toc-link" href="#%E5%AF%BC%E5%85%A5%E7%9B%B8%E5%85%B3%E5%BA%93"><span class="space-toc-text">导入相关库</span></a></li><li class="space-toc-item space-toc-level-2"><a class="space-toc-link" href="#%E8%A7%82%E5%AF%9F%E6%95%B0%E6%8D%AE"><span class="space-toc-text">观察数据</span></a></li><li class="space-toc-item space-toc-level-2"><a class="space-toc-link" href="#%E5%AF%B9%E6%A0%87%E7%AD%BE%E6%8E%92%E5%BA%8F"><span class="space-toc-text">对标签排序</span></a></li><li class="space-toc-item space-toc-level-2"><a class="space-toc-link" href="#%E6%95%B0%E5%AD%97%E5%92%8C%E6%96%87%E5%AD%97"><span class="space-toc-text">数字和文字</span></a></li><li class="space-toc-item space-toc-level-2"><a class="space-toc-link" href="#%E9%87%8D%E5%86%99dataset%E7%B1%BB"><span class="space-toc-text">重写dataset类</span></a></li><li class="space-toc-item space-toc-level-2"><a class="space-toc-link" href="#%E5%8A%A0%E8%BD%BD%E6%95%B0%E6%8D%AE"><span class="space-toc-text">加载数据</span></a></li><li class="space-toc-item space-toc-level-2"><a class="space-toc-link" href="#%E5%8A%A0%E8%BD%BDDataLoader"><span class="space-toc-text">加载DataLoader</span></a></li><li class="space-toc-item space-toc-level-2"><a class="space-toc-link" href="#%E5%8A%A0%E8%BD%BD%E4%B8%8E%E8%AE%AD%E7%BB%83%E6%A8%A1%E5%9E%8B"><span class="space-toc-text">加载与训练模型</span></a></li><li class="space-toc-item space-toc-level-2"><a class="space-toc-link" href="#%E8%AE%AD%E7%BB%83"><span class="space-toc-text">训练</span></a></li></ol>
+           </div>
+        
+      </div>
+   </div>
+    <!-- 评论 -->
+    
+  </div>
+</article>
+  </div>
+</div>
+
+
+
+<!-- 如果是home模式的话，不在首页就显示footer，如果不是home模式的话 所有都显示footer -->
+
+  <div class="footer-outer animate__animated  animate__fadeInUp">
+    <div class="footer-inner">
+    <div class="footer-text">
+    <p>Power by Guo_Yifan</p>
+
+    </div>
+    <div class="footer-contact">
+    <ul class="footer-ul">
+        
+        <li class="footer-li">
+            <a href="https://github.com" target="_blank">
+                <i class="ri-github-line"></i>
+            </a>
+        </li>
+        
+        <li class="footer-li">
+            <a href="mailto:guoyf@mail.nwpu.edu.cn" target="_blank">
+                <i class="ri-mail-line"></i>
+            </a>
+        </li>
+        
+    </ul>
+    </div>
+    </div>
+</div>
+
+
+
+
+
+
+<script src="/js/white.js"></script>
+
+
+
+    
+      
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/highlight.min.js"></script>
+
+      <script>hljs.initHighlightingOnLoad();</script>
+    
+
+</body>
+</html>
